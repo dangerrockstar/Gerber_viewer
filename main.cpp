@@ -1,9 +1,5 @@
 #include "mainwindow.h"
-//#include "file_reading.h"
 #include <QApplication>
-#include "QGraphicsItem"
-#include <QtSvg/QSvgRenderer>
-#include <QtSvg/QGraphicsSvgItem>
 
 
 int main(int argc, char *argv[])

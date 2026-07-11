@@ -39,13 +39,11 @@ INCLUDEPATH += /usr/local/include/include
 SOURCES += main.cpp\
 mainwindow.cpp \
     qsmartgraphicsview.cpp \
-    file_reading.cpp \
     plot.cpp \
     dataset_plot.cpp
 
 HEADERS  += mainwindow.h \
     qsmartgraphicsview.h \
-    file_reading.h \
     plot.h \
     dataset_plot.h
 

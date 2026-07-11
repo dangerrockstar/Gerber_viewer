@@ -1,151 +1,204 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <algorithm>
-#include <typeinfo>
-#include "file_reading.h"
 #include <QDir>
-#include <time.h>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QGraphicsPixmapItem>
+#include <QAction>
+#include <QPainter>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QMimeData>
+#include <QUrl>
+#include <QProcess>
+#include <QTemporaryDir>
+#include <QDirIterator>
+#include <QStandardPaths>
 #include <opencv2/opencv.hpp>
 #include <opencv2/opencv_modules.hpp>
 
-using namespace std;
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
-    file_reading r;
-    plot p;
+    QAction *openAction = ui->mainToolBar->addAction(tr("Open Gerber"));
+    connect(openAction, &QAction::triggered, this, &MainWindow::on_actionOpenGerber_triggered);
+    ui->mainToolBar->setMovable(false);
 
-    //>>>>>>>>>>>>>>>>>>File path>>>>>>>>>>>//
-    QString qpath = QDir::currentPath();
-    if (!qpath.endsWith('/')) qpath += '/';
-    string file_path = qpath.toStdString();
-    float  xmax=0.0 , ymax=0.0, ymin=0.0 , xmin=0.0  ;
-    int weight=400, hight=400;
-    bool polarity = false;
-    bool hasFiles = false;
-    QDir dir(qpath);
-    QStringList filters;
-    filters << "*.gbr" << "*.GBr" << "*.gtl" << "*.GTL" << "*.gts" << "*.GTS";
-    QStringList entries = dir.entryList(filters, QDir::Files);
-    if (!entries.isEmpty()) {
-        hasFiles = true;
-        r.face(file_path ,   xmax , ymax, ymin ,  xmin, polarity );
-        weight  = xmax - xmin;
-        hight  = ymax - ymin;
-        if (weight <= 0) weight = 400;
-        if (hight <= 0) hight = 400;
-        weight = weight/FOutputBmpMilPerPxl;
-        hight= hight/FOutputBmpMilPerPxl;
-    }
-//>>>>>>>>>>>>>> Create blank image using weight & hight >>>>>>>>>>>>>//
-
-cv::Mat surface = cv::Mat:: zeros(cv::Size( weight, hight),CV_8UC1);
-    qDebug()<<"weight"<<weight<<"hight"<<hight;
-
-    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>//
-  //                   call  ploting                                                   //
-//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>//
-
-    if (hasFiles) {
-        p.plot_gerber(file_path , surface);
-    }
-// int w = 400;
-// vector<cv::Point>  points;
-//    cv::Point rook_points[1][7];
-//    rook_points[0][0] = cv::Point( w/4.0, 7*w/8.0 );
-//    rook_points[0][1] = cv::Point( 3*w/4.0, 7*w/8.0 );
-//    rook_points[0][2] = cv::Point( 3*w/4.0, 13*w/16.0 );
-//    rook_points[0][3] = cv::Point( 11*w/16.0, 13*w/16.0 );
-//    rook_points[0][4] = cv::Point( 19*w/32.0, 3*w/8.0 );
-//    rook_points[0][5] = cv::Point( 3*w/4.0, 3*w/8.0 );
-//    rook_points[0][6] = cv::Point( 3*w/4.0, w/8.0 );
-//    vertices.push_back(rook_points);
-//     vector<vector<cv::Point>> unshap_vertices;
-//    unshap_vertices.push_back(vertices);
-    // const cv::Point* ppt[1] = { rook_points[0] };
-//    int npt[] = {3};
-
-
-//cv::drawContours(surface , unshap_vertices ,0 , cv::Scalar(255) , 14 ,  cv::LINE_8);
-
-    cv::imwrite("../pcb.bmp",surface);
-
-    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>//
-  //                               End ploting                                         //
-//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>//
-
-    QImage pcbImage = mat2qimage(surface);
-    int dividingValue = 4;
-    QPixmap pixmap = QPixmap::fromImage(pcbImage.scaled(QSize((pcbImage.size().width())/dividingValue, (pcbImage.size().height()/dividingValue))));
-    pcbImage = pixmap.toImage();
-//    boardIMG = pcbImage;
-
-    QGraphicsScene *scene = new QGraphicsScene(ui->graphicsView);
-
-//    QGraphicsPixmapItem *item =  QGraphicsPixmapItem()
-    QGraphicsPixmapItem *item = new QGraphicsPixmapItem(QPixmap::fromImage(pcbImage));
-    QTransform transform = QTransform();
-    transform.scale(-1,1);
-//    item->setTransform(transform);
-//    item->setScale(1);
-
-//        QTransform transform = QTransform();
-        transform.rotate(180);
-        item->setTransform(transform);
-//        item->setScale(1);
-
-
-    scene->addItem(item);
-//        scene->setSceneRect(-10, -10, 10*72, 10*72);
-    ui->graphicsView->setScene(scene);
-//        ui->graphicsView->fitInView(0,0,10,10,Qt::KeepAspectRatio);
-    //ui->graphicsView->fitInView(scene->sceneRect(),Qt::KeepAspectRatio);
-    ui->graphicsView->setCacheMode(QGraphicsView::CacheBackground);
-    ui->graphicsView->setViewportUpdateMode( QGraphicsView::FullViewportUpdate);
     ui->graphicsView->setDragMode(QGraphicsView::ScrollHandDrag);
-    ui->graphicsView->show();
+    ui->graphicsView->setCacheMode(QGraphicsView::CacheBackground);
+    ui->graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
 
+    // Enable drag and drop on main window
+    setAcceptDrops(true);
+
+    cv::Mat surface(600, 600, CV_8UC1, cv::Scalar(0));
+    cv::putText(surface,
+                "Open a Gerber file from the toolbar",
+                cv::Point(16, 32),
+                cv::FONT_HERSHEY_SIMPLEX,
+                0.6,
+                cv::Scalar(255),
+                1,
+                cv::LINE_AA);
+    showSurface(surface);
 }
 
 MainWindow::~MainWindow()
-
 {
     delete ui;
 }
 
-/**
- * @function for returing qimage from opencv mat.
- */
-QImage MainWindow::mat2qimage(cv::Mat &mat)
+void MainWindow::showSurface(const cv::Mat &surface)
 {
-    if(mat.type()==CV_8UC1)
-    {
-        // Set the color table (used to translate colour indexes to qRgb values)
+    QImage image = mat2qimage(surface);
+    if (image.isNull()) {
+        return;
+    }
+
+    QGraphicsScene *newScene = new QGraphicsScene(ui->graphicsView);
+    newScene->addPixmap(QPixmap::fromImage(image));
+    ui->graphicsView->setScene(newScene);
+    ui->graphicsView->fitInView(newScene->sceneRect(), Qt::KeepAspectRatio);
+}
+
+void MainWindow::on_actionOpenGerber_triggered()
+{
+    QString defaultDir = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+    if (defaultDir.isEmpty()) defaultDir = QDir::homePath();
+    QString fileName = QFileDialog::getOpenFileName(this,
+                                                    tr("Open Gerber File"),
+                                                    defaultDir,
+                                                    tr("Gerber Files (*.gbr *.gtl *.gts);;All Files (*.*)"));
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    cv::Mat surface(1200, 1200, CV_8UC1, cv::Scalar(0));
+    plot p;
+    p.plot_gerber(fileName.toStdString(), surface);
+    showSurface(surface);
+
+    ui->statusBar->showMessage(tr("Loaded %1").arg(QFileInfo(fileName).fileName()));
+    setWindowTitle(tr("Gerber Viewer - %1").arg(QFileInfo(fileName).fileName()));
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+    const QMimeData *mime = event->mimeData();
+    if (mime->hasUrls()) {
+        event->acceptProposedAction();
+    } else {
+        event->ignore();
+    }
+}
+
+static QStringList findGerberFilesInDir(const QString &dirPath)
+{
+    QStringList results;
+    QDirIterator it(dirPath, QDir::Files | QDir::NoSymLinks, QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        it.next();
+        QString fn = it.fileName().toLower();
+        if (fn.endsWith(".gbr") || fn.endsWith(".gtl") || fn.endsWith(".gts") || fn.endsWith(".ger")) {
+            results << it.filePath();
+        }
+    }
+    return results;
+}
+
+void MainWindow::dropEvent(QDropEvent *event)
+{
+    const QMimeData *mime = event->mimeData();
+    if (!mime->hasUrls()) {
+        event->ignore();
+        return;
+    }
+
+    QList<QUrl> urls = mime->urls();
+    if (urls.isEmpty()) {
+        event->ignore();
+        return;
+    }
+
+    // Try each url until a gerber file is found/loaded
+    for (const QUrl &url : urls) {
+        if (!url.isLocalFile()) continue;
+        QString path = url.toLocalFile();
+        QFileInfo fi(path);
+        if (fi.isDir()) {
+            QStringList found = findGerberFilesInDir(path);
+            if (!found.isEmpty()) {
+                QString fileName = found.first();
+                cv::Mat surface(1200, 1200, CV_8UC1, cv::Scalar(0));
+                plot p; p.plot_gerber(fileName.toStdString(), surface);
+                showSurface(surface);
+                ui->statusBar->showMessage(tr("Loaded %1").arg(QFileInfo(fileName).fileName()));
+                setWindowTitle(tr("Gerber Viewer - %1").arg(QFileInfo(fileName).fileName()));
+                event->acceptProposedAction();
+                return;
+            }
+        }
+
+        QString lower = fi.fileName().toLower();
+        if (lower.endsWith(".zip")) {
+            QTemporaryDir tmp;
+            if (!tmp.isValid()) continue;
+            // Extract via system unzip; fallback if unavailable
+            QStringList args;
+            args << path << "-d" << tmp.path();
+            int rc = QProcess::execute("unzip", args);
+            if (rc != 0) {
+                // try with -o to overwrite
+                args.insert(1, "-o");
+                QProcess::execute("unzip", args);
+            }
+            QStringList found = findGerberFilesInDir(tmp.path());
+            if (!found.isEmpty()) {
+                QString fileName = found.first();
+                cv::Mat surface(1200, 1200, CV_8UC1, cv::Scalar(0));
+                plot p; p.plot_gerber(fileName.toStdString(), surface);
+                showSurface(surface);
+                ui->statusBar->showMessage(tr("Loaded %1").arg(QFileInfo(fileName).fileName()));
+                setWindowTitle(tr("Gerber Viewer - %1").arg(QFileInfo(fileName).fileName()));
+                event->acceptProposedAction();
+                return;
+            }
+        }
+
+        // direct gerber file
+        if (lower.endsWith(".gbr") || lower.endsWith(".gtl") || lower.endsWith(".gts") || lower.endsWith(".ger")) {
+            QString fileName = path;
+            cv::Mat surface(1200, 1200, CV_8UC1, cv::Scalar(0));
+            plot p; p.plot_gerber(fileName.toStdString(), surface);
+            showSurface(surface);
+            ui->statusBar->showMessage(tr("Loaded %1").arg(QFileInfo(fileName).fileName()));
+            setWindowTitle(tr("Gerber Viewer - %1").arg(QFileInfo(fileName).fileName()));
+            event->acceptProposedAction();
+            return;
+        }
+    }
+
+    event->ignore();
+}
+
+QImage MainWindow::mat2qimage(const cv::Mat &mat)
+{
+    if (mat.type() == CV_8UC1) {
         QVector<QRgb> colorTable;
-        for (int i=0; i<256; i++)
-            colorTable.push_back(qRgb(i,i,i));
-        // Copy input Mat
-        const uchar *qImageBuffer = (const uchar*)mat.data;
-        // Create QImage with same dimensions as input Mat
+        for (int i = 0; i < 256; ++i)
+            colorTable.push_back(qRgb(i, i, i));
+        const uchar *qImageBuffer = reinterpret_cast<const uchar*>(mat.data);
         QImage img(qImageBuffer, mat.cols, mat.rows, mat.step, QImage::Format_Indexed8);
         img.setColorTable(colorTable);
-        return img;
+        return img.copy();
     }
-    // 8-bits unsigned, NO. OF CHANNELS=3
-    else if(mat.type()==CV_8UC3)
-    {
-        // Copy input Mat
-        const uchar *qImageBuffer = (const uchar*)mat.data;
-        // Create QImage with same dimensions as input Mat
+    if (mat.type() == CV_8UC3) {
+        const uchar *qImageBuffer = reinterpret_cast<const uchar*>(mat.data);
         QImage img(qImageBuffer, mat.cols, mat.rows, mat.step, QImage::Format_RGB888);
-        return img.rgbSwapped();
+        return img.rgbSwapped().copy();
     }
-    else
-    {
-        //qDebug() << "ERROR: Mat could not be converted to QImage.";
-        return QImage();
-    }
+    return QImage();
 }

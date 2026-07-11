@@ -1,0 +1,27 @@
+G04 --- HEADER BEGIN --- *
+G04 #@! TF.GenerationSoftware,LibrePCB,LibrePCB,0.2.0-unstable*
+G04 #@! TF.CreationDate,2023-07-28T15:29:53*
+G04 #@! TF.ProjectId,can2usb,565da67e-d1db-4e60-9fc1-0ba8a5c8bd0e,v1*
+G04 #@! TF.Part,Single*
+G04 #@! TF.SameCoordinates*
+G04 #@! TF.FileFunction,Component,L2,Bot*
+%FSLAX66Y66*%
+%MOMM*%
+G01*
+G75*
+G04 --- HEADER END --- *
+G04 --- APERTURE LIST BEGIN --- *
+G04 #@! TA.AperFunction,Profile*
+%ADD10C,0.001*%
+G04 #@! TD*
+G04 --- APERTURE LIST END --- *
+G04 --- BOARD BEGIN --- *
+D10*
+X0Y0D02*
+X60000000Y0D01*
+X60000000Y16440000D01*
+X0Y16440000D01*
+X0Y0D01*
+G04 --- BOARD END --- *
+G04 #@! TF.MD5,19df970c12067c2f50274dfb293a10bf*
+M02*

@@ -1,0 +1,20 @@
+M48
+; #@! TF.GenerationSoftware,LibrePCB,LibrePCB,0.2.0-unstable
+; #@! TF.CreationDate,2023-07-28T15:27:41
+; #@! TF.ProjectId,can2usb,565da67e-d1db-4e60-9fc1-0ba8a5c8bd0e,v1
+; #@! TF.Part,Single
+; #@! TF.SameCoordinates
+; #@! TF.FileFunction,NonPlated,1,2,NPTH
+FMAT,2
+METRIC,TZ
+; #@! TA.AperFunction,MechanicalDrill
+T1C0.9
+%
+G90
+G05
+M71
+T1
+X5.2Y6.02
+X5.2Y10.42
+T0
+M30
