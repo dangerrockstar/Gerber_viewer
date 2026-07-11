@@ -1,7 +1,7 @@
 #include "dataset_plot.h"
 #include "mainwindow.h"
-#include<opencv.hpp>
-#include<opencv_modules.hpp>
+#include <opencv2/opencv.hpp>
+#include <opencv2/opencv_modules.hpp>
 
 
 void dataset_plot::arc_refined_new(bool cw,double x1, double y1, double x2, double y2, double c1, double c2,vector<cv::Point> &vertices)

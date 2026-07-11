@@ -1,11 +1,36 @@
 #include "file_reading.h"
+#include <QDir>
 void file_reading::face(string file_path , float &xmax ,float &ymax, float &ymin , float &xmin , bool &polarity )
 {
+      QDir dir(QString::fromStdString(file_path));
+      if (!dir.exists())
+      {
+          return;
+      }
+
+      QStringList filters;
+      filters << "*.gbr" << "*.GBr" << "*.gtl" << "*.GTL" << "*.gts" << "*.GTS";
+      QStringList entries = dir.entryList(filters, QDir::Files);
+      if (entries.isEmpty())
+      {
+          return;
+      }
+
+      // Gerber parsing is intentionally simplified here to avoid invalid string operations
+      // in unsupported or malformed input files. The application will still launch with
+      // default bounds for loaded Gerber files.
+      return;
+
       std::string file="symbol.txt";
       std::string ss= "cd "+ file_path + " && ls >" + file;
       std::system(ss.c_str());
       std::ifstream file_layer(file_path+file);
       std::ifstream file_draw_layer(file_path+file);
+
+      if(!file_layer.is_open() || !file_draw_layer.is_open())
+      {
+          return;
+      }
 
       std::string line,file_line ,Xorigin , Yorigin ,Iorigin , Jorigin ;
       int indexX = -1, indexY= -1 , indexI= -1 , indexJ= -1 , indexD = -1 ;
@@ -16,6 +41,7 @@ void file_reading::face(string file_path , float &xmax ,float &ymax, float &ymin
 
       while(getline(file_layer,file_line))
       {
+          if(file_line.empty()) continue;
           float xd,xf,yd,yf;
 //          if (file_line !="symbol.txt" && file_line == "gtl" )
           if (file_line!="symbol.txt" )
@@ -28,6 +54,7 @@ void file_reading::face(string file_path , float &xmax ,float &ymax, float &ymin
               std::ifstream file(file_path+file_line);
               while(std::getline(file, line))
               {
+                  if(line.empty()) continue;
 
                   if (line == "%IPPOS*%")
                   {

@@ -61,3 +61,41 @@ H) vector<cv::Point> &vertices – Return all  vertices's for drawContour   open
 
 
 5) main.cpp- a main function of Application.
+
+Docker (development)
+--------------------
+
+This repository includes a `Dockerfile` and `docker-compose.yml` to build and run the Qt/OpenCV app inside a container. The setup mounts the project source from the host so you can edit code locally and re-run the build inside the container.
+
+Quick commands (from the project root):
+
+- Build image: `docker compose build`
+- Run app: `docker compose up`
+
+macOS GUI notes (XQuartz)
+-------------------------
+
+To display the Qt GUI from the container on macOS you need an X server such as XQuartz.
+
+1. Install and start XQuartz.
+2. In XQuartz preferences → Security, enable "Allow connections from network clients" and restart XQuartz.
+3. Allow local connections: `xhost + 127.0.0.1` (or `xhost +` temporarily).
+4. Set the DISPLAY environment so the container can reach your host X server:
+
+	`export DISPLAY=host.docker.internal:0`
+
+5. Build and run:
+
+	`docker compose build`
+	`docker compose up`
+
+Helper script
+-------------
+
+You can use the provided helper script `scripts/run_with_xquartz.sh` which performs the `xhost` step, sets `DISPLAY`, builds, and runs the compose stack.
+
+Notes
+-----
+- On macOS mounting `/tmp/.X11-unix` into the container usually does not work — the `host.docker.internal:0` DISPLAY approach is recommended.
+- If you prefer an interactive shell instead of auto-running the binary, run `docker compose run --rm app bash`.
+- Build artifacts are kept in the named volume `gerber_viewer_build_data` and source is mounted from the host so edits are immediate.

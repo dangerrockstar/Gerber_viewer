@@ -3,9 +3,10 @@
 #include <algorithm>
 #include <typeinfo>
 #include "file_reading.h"
+#include <QDir>
 #include <time.h>
-#include<opencv.hpp>
-#include<opencv_modules.hpp>
+#include <opencv2/opencv.hpp>
+#include <opencv2/opencv_modules.hpp>
 
 using namespace std;
 MainWindow::MainWindow(QWidget *parent) :
@@ -18,16 +19,27 @@ MainWindow::MainWindow(QWidget *parent) :
     plot p;
 
     //>>>>>>>>>>>>>>>>>>File path>>>>>>>>>>>//
-    string file_path = "/home/vdr06/vdr_tech/zip/P15657/" ;
+    QString qpath = QDir::currentPath();
+    if (!qpath.endsWith('/')) qpath += '/';
+    string file_path = qpath.toStdString();
     float  xmax=0.0 , ymax=0.0, ymin=0.0 , xmin=0.0  ;
-    int weight=0 ,hight  =0;
-    bool polarity;
-    //>>>>>>>>>>>>>>> collect max mix value >>>>>>>>>>>>///
-    r.face(file_path ,   xmax , ymax, ymin ,  xmin, polarity );
-    weight  = xmax - xmin;
-    hight  = ymax - ymin;
-    weight = weight/FOutputBmpMilPerPxl;
-    hight= hight/FOutputBmpMilPerPxl;
+    int weight=400, hight=400;
+    bool polarity = false;
+    bool hasFiles = false;
+    QDir dir(qpath);
+    QStringList filters;
+    filters << "*.gbr" << "*.GBr" << "*.gtl" << "*.GTL" << "*.gts" << "*.GTS";
+    QStringList entries = dir.entryList(filters, QDir::Files);
+    if (!entries.isEmpty()) {
+        hasFiles = true;
+        r.face(file_path ,   xmax , ymax, ymin ,  xmin, polarity );
+        weight  = xmax - xmin;
+        hight  = ymax - ymin;
+        if (weight <= 0) weight = 400;
+        if (hight <= 0) hight = 400;
+        weight = weight/FOutputBmpMilPerPxl;
+        hight= hight/FOutputBmpMilPerPxl;
+    }
 //>>>>>>>>>>>>>> Create blank image using weight & hight >>>>>>>>>>>>>//
 
 cv::Mat surface = cv::Mat:: zeros(cv::Size( weight, hight),CV_8UC1);
@@ -37,7 +49,9 @@ cv::Mat surface = cv::Mat:: zeros(cv::Size( weight, hight),CV_8UC1);
   //                   call  ploting                                                   //
 //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>//
 
-    p.plot_gerber(file_path , surface);
+    if (hasFiles) {
+        p.plot_gerber(file_path , surface);
+    }
 // int w = 400;
 // vector<cv::Point>  points;
 //    cv::Point rook_points[1][7];

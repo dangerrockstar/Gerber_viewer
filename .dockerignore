@@ -1,0 +1,12 @@
+build/
+*.o
+*.so
+*.a
+*.user
+*~
+.vscode
+gerberviewer.code-workspace
+*.pro.user*
+*.suo
+*.log
+*.tmp
