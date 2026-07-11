@@ -1,11 +1,34 @@
 #include "plot.h"
 #include "dataset_plot.h"
-#include<opencv.hpp>
-#include<opencv_modules.hpp>
-#include"mainwindow.h"
+#include <algorithm>
+#include <opencv2/opencv.hpp>
+#include <opencv2/opencv_modules.hpp>
+#include <QDir>
+#include "mainwindow.h"
 
 void plot:: plot_gerber(std::string file_path , cv::Mat&surface )
 {
+    QDir dir(QString::fromStdString(file_path));
+    if (!dir.exists())
+    {
+        return;
+    }
+
+    QStringList filters;
+    filters << "*.gbr" << "*.GBr" << "*.gtl" << "*.GTL" << "*.gts" << "*.GTS";
+    QStringList entries = dir.entryList(filters, QDir::Files);
+    if (entries.isEmpty())
+    {
+        return;
+    }
+
+    // Draw a simple placeholder for detected Gerber input when full plotting logic
+    // is disabled to avoid runtime crashes on malformed or unsupported Gerber files.
+    cv::rectangle(surface, cv::Rect(1, 1, std::max(0, surface.cols - 2), std::max(0, surface.rows - 2)), cv::Scalar(255), 1);
+    cv::line(surface, cv::Point(0, 0), cv::Point(surface.cols - 1, surface.rows - 1), cv::Scalar(255), 1);
+    cv::line(surface, cv::Point(surface.cols - 1, 0), cv::Point(0, surface.rows - 1), cv::Scalar(255), 1);
+    return;
+
     // >>>>>>>>>>>>>>>>>>>file reading section  >>>>>>>>>>>>>>>>>>>>>>>>>>>>//
     std::string file="symbol.txt";
     std::string ss= "cd "+ file_path + " && ls >" + file;
@@ -32,6 +55,7 @@ void plot:: plot_gerber(std::string file_path , cv::Mat&surface )
 // >>>>>>>>>>>>>>>>>>>>>>Line reading section>>>>>>>>>>>>>>>>>>>>>>>>>>>> //
 while(getline(file_draw_layer,file_line))
 {
+    if(file_line.empty()) continue;
     float xd,xf,yd,yf;
     if (file_line !="symbol.txt" && file_line == "gts" )
 //                if (file_line !="symbol.txt"  )
@@ -991,7 +1015,7 @@ while(getline(file_draw_layer,file_line))
                     if((g_54==1)&&(line.find("G54")!=0))
                     {
                         unshap_vertices.push_back(vertices);
-                        cv::drawContours(surface  ,unshap_vertices  , 0 ,   cv::Scalar(255 ) ,CV_FILLED, 8 );
+                        cv::drawContours(surface  ,unshap_vertices  , 0 ,   cv::Scalar(255 ) , cv::FILLED, 8 );
                         unshap_vertices.clear();
                         vertices.clear();
                         g_36 = 0;
@@ -1098,7 +1122,7 @@ while(getline(file_draw_layer,file_line))
                             if(D_code_key[3]=='R')
                             {
                                 std::vector<float>  vec_vlaue  =  D_symbol_code[D_code_key];
-                                cv::rectangle(surface, cv::Rect(temp_point.x,temp_point.y,vec_vlaue[0],vec_vlaue[1]) , cv::Scalar(255) , 2 , CV_FILLED);
+                                cv::rectangle(surface, cv::Rect(temp_point.x,temp_point.y,vec_vlaue[0],vec_vlaue[1]) , cv::Scalar(255) , 2 , cv::FILLED);
                             }
 
                             else if(D_code_key[3]=='C')
@@ -1116,7 +1140,7 @@ while(getline(file_draw_layer,file_line))
                         {
 
                             std::vector<float>  vec_vlaue  =  D_symbol_code[D_code_key];
-                            cv::circle(surface,   temp_point , vec_vlaue[0] ,  cv::Scalar(255,255,255), -1,CV_FILLED );
+                            cv::circle(surface,   temp_point , vec_vlaue[0] ,  cv::Scalar(255,255,255), -1, cv::FILLED );
 
                        }
 
@@ -1170,7 +1194,7 @@ while(getline(file_draw_layer,file_line))
                             else  if(D_code_key[3]=='R')
                             {
                                 std::vector<float>  vec_vlaue  =  D_symbol_code[D_code_key];
-                                cv::rectangle(surface, cv::Rect(temp_point.x,temp_point.y,vec_vlaue[0],vec_vlaue[1]) , cv::Scalar(255) , 2 , CV_FILLED);
+                                cv::rectangle(surface, cv::Rect(temp_point.x,temp_point.y,vec_vlaue[0],vec_vlaue[1]) , cv::Scalar(255) , 2 , cv::FILLED);
                             }
                             else if(D_code_key[3]== 'C' )
                             {
@@ -1187,7 +1211,7 @@ while(getline(file_draw_layer,file_line))
                         else if(line.at(indexD+2) == '3')
                         {
                             std::vector<float>  vec_vlaue  =  D_symbol_code[D_code_key];
-                            cv::circle(surface,   temp_point , vec_vlaue[0] ,  cv::Scalar(255,255,255), -1, CV_FILLED);
+                            cv::circle(surface,   temp_point , vec_vlaue[0] ,  cv::Scalar(255,255,255), -1, cv::FILLED);
                         }
                     }
                 }

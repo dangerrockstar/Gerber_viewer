@@ -13,6 +13,9 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = geber_app
 TEMPLATE = app
 
+CONFIG += link_pkgconfig
+PKGCONFIG += opencv4
+
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked as deprecated (the exact warnings
 # depend on your compiler). Please consult the documentation of the
@@ -24,11 +27,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-
+INCLUDEPATH += /usr/include/opencv4
 INCLUDEPATH += /usr/local/include/opencv2
 INCLUDEPATH += /usr/local/include/include
 #LIBS +=-L /usr/pyman/lib
-LIBS += -L /usr/local/lib -L/usr/local/lib -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_features2d -lopencv_calib3d -lopencv_video -lopencv_xfeatures2d -lopencv_flann -lopencv_imgproc -lopencv_stitching
+# OpenCV libraries are linked through pkg-config via PKGCONFIG += opencv4
+#LIBS += -L /usr/local/lib -L/usr/local/lib -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_features2d -lopencv_calib3d -lopencv_video -lopencv_xfeatures2d -lopencv_flann -lopencv_imgproc -lopencv_stitching
 
 
 

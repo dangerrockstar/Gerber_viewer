@@ -40,23 +40,13 @@ QSmartGraphicsView::QSmartGraphicsView(QWidget *parent) :
 
 #ifndef NO_SIDEMENU
     //New side button bar. Not finished.
-    sbtn = new QSideButtonBar(2, this);
+    sbtn = new QSideButtonBar(2);
     sbtn->renameButtonID("Normal", 0);   
     sbtn->renameButtonID("Select", 1);
 #ifdef QT_SVG_LIB
-    QIcon normalsvg(":/d/dark/eye.svg");
-    QIcon selectsvg(":/d/dark/alignment-align.svg");
-    if(normalsvg.isNull() || selectsvg.isNull())
-    {
-        sbtn->renameButtonText("N", 0);
-        sbtn->renameButtonText("S", 1);
-    }
-    else
-    {
-        sbtn->setButtonIcon("Normal", normalsvg);
-        sbtn->setButtonIcon("Select", selectsvg);
-    }
-
+    // Resource icons are not available in this repository, fallback to text labels.
+    sbtn->renameButtonText("N", 0);
+    sbtn->renameButtonText("S", 1);
 #else
     sbtn->renameButtonText("N", 0);
     sbtn->renameButtonText("S", 1);

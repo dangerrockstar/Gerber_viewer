@@ -14,8 +14,8 @@
 #include <QtSvg/QGraphicsSvgItem>
 #include "plot.h"
 #include "file_reading.h"
-#include<opencv.hpp>
-#include<opencv_modules.hpp>
+#include <opencv2/opencv.hpp>
+#include <opencv2/opencv_modules.hpp>
 //#include "grab_frac.h"
 static float FOutputBmpMilPerPxl=0.042/25.4;
 using namespace std;
