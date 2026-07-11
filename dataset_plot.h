@@ -9,8 +9,6 @@
 #include <string>
 #include <iostream>
 #include "QGraphicsItem"
-#include <QtSvg/QSvgRenderer>
-#include <QtSvg/QGraphicsSvgItem>
 #include <opencv2/opencv.hpp>
 #include <opencv2/opencv_modules.hpp>
 #include "mainwindow.h"

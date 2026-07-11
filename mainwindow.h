@@ -1,22 +1,21 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
+#include <QAction>
 #include <QMainWindow>
+#include <QDropEvent>
+#include <QDragEnterEvent>
+#include <QStandardPaths>
 #include <fstream>
 #include <sstream>
 #include <vector>
 #include <math.h>
 #include <limits>
 #include <string>
-#include <string>
 #include <iostream>
 #include "QGraphicsItem"
-#include <QtSvg/QSvgRenderer>
-#include <QtSvg/QGraphicsSvgItem>
 #include "plot.h"
-#include "file_reading.h"
 #include <opencv2/opencv.hpp>
 #include <opencv2/opencv_modules.hpp>
-//#include "grab_frac.h"
 static float FOutputBmpMilPerPxl=0.042/25.4;
 using namespace std;
 
@@ -31,9 +30,17 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+
+private slots:
+    void on_actionOpenGerber_triggered();
+
 private:
     Ui::MainWindow *ui;
-    QImage mat2qimage(cv::Mat &mat);
+    void showSurface(const cv::Mat &surface);
+    QImage mat2qimage(const cv::Mat &mat);
+protected:
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
 };
 
 #endif // MAINWINDOW_H

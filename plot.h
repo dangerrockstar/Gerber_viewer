@@ -1,25 +1,14 @@
 #ifndef PLOT_H
 #define PLOT_H
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <math.h>
-#include <limits>
-#include <string>
-#include "QGraphicsItem"
-#include <QtSvg/QSvgRenderer>
-#include <QtSvg/QGraphicsSvgItem>
-#include "mainwindow.h"
-#include <QDebug>
-#include <opencv2/opencv.hpp>
-#include <opencv2/opencv_modules.hpp>
 
-using namespace std;
+#include <opencv2/opencv.hpp>
+#include <string>
+#include <vector>
+
 class plot
 {
 public:
-//    plot();
-    void plot_gerber(std::string file_path , cv::Mat&surface);
+    void plot_gerber(const std::string &file_path, cv::Mat &surface);
 };
 
 #endif // PLOT_H

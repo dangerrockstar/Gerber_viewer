@@ -68,7 +68,7 @@ QSmartGraphicsView::QSmartGraphicsView(QWidget *parent) :
 #ifdef QT_OPENGL_LIB
     this->setViewport(new QGLWidget(QGLFormat(QGL::SampleBuffers | QGL::DirectRendering)));
 #else
-    this->setAttribute(Qt::WA_MSWindowsUseDirect3D, true);
+    // Direct3D attribute is not available on this Qt version.
 #endif
     this->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
 }
@@ -171,17 +171,17 @@ void QSmartGraphicsView::setImagefromQImage(const std::vector<QImage> &qimgs)
 
 void QSmartGraphicsView::wheelEvent(QWheelEvent *event)
 {
-	if(event->delta() == 0)
+	if(event->angleDelta().y() == 0)
 		return;
 	QList<QGraphicsItem*> list = this->items();
 	if(list.size() <= 0)
 		return;
 
-	QPointF pt = this->mapToScene(event->pos());
+	QPointF pt = this->mapToScene(event->position().toPoint());
 	double factor;
-	if(event->delta() > 0)
+	if(event->angleDelta().y() > 0)
 		factor = 1.1;
-	else if(event->delta() < 0)
+	else if(event->angleDelta().y() < 0)
 		factor = 0.9;
 	else
 		factor = 1;
@@ -275,7 +275,7 @@ void QSmartGraphicsView::mousePressEvent(QMouseEvent *event)
         is_item = true;
     }
 #endif
-    else if(event->button() == Qt::MidButton)
+    else if(event->button() == Qt::MiddleButton)
     {
 #ifndef NO_SIDEMENU
         if(rubberBand)
@@ -344,8 +344,6 @@ void QSmartGraphicsView::on_saveAction_triggered()
     bool isError = false;
     if(img_num == 0) {return;}
     QFileDialog d;
-    if(img_num > 1)
-        d.setConfirmOverwrite(false);
     QFileInfo file_name(d.getSaveFileName(0, "Img",0,"PNG (*.png);;BMP (*.bmp);;JPG (*.jpg)"));
     if(file_name.fileName().isNull()) {
         return;
