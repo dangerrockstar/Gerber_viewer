@@ -1293,6 +1293,11 @@ moc_mainwindow.cpp: mainwindow.h \
 		/opt/homebrew/lib/QtGui.framework/Headers/QDragEnterEvent \
 		/opt/homebrew/lib/QtCore.framework/Headers/QStandardPaths \
 		/opt/homebrew/lib/QtCore.framework/Headers/qstandardpaths.h \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/QListWidget \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/qlistwidget.h \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/QListWidgetItem \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/QGraphicsScene \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/qgraphicsscene.h \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/QGraphicsItem \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/qgraphicsitem.h \
 		plot.h \
@@ -1754,6 +1759,11 @@ main.o: main.cpp mainwindow.h \
 		/opt/homebrew/lib/QtGui.framework/Headers/QDragEnterEvent \
 		/opt/homebrew/lib/QtCore.framework/Headers/QStandardPaths \
 		/opt/homebrew/lib/QtCore.framework/Headers/qstandardpaths.h \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/QListWidget \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/qlistwidget.h \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/QListWidgetItem \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/QGraphicsScene \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/qgraphicsscene.h \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/QGraphicsItem \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/qgraphicsitem.h \
 		plot.h \
@@ -1884,6 +1894,11 @@ mainwindow.o: mainwindow.cpp mainwindow.h \
 		/opt/homebrew/lib/QtGui.framework/Headers/QDragEnterEvent \
 		/opt/homebrew/lib/QtCore.framework/Headers/QStandardPaths \
 		/opt/homebrew/lib/QtCore.framework/Headers/qstandardpaths.h \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/QListWidget \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/qlistwidget.h \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/QListWidgetItem \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/QGraphicsScene \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/qgraphicsscene.h \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/QGraphicsItem \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/qgraphicsitem.h \
 		plot.h \
@@ -2462,6 +2477,11 @@ dataset_plot.o: dataset_plot.cpp dataset_plot.h \
 		/opt/homebrew/lib/QtGui.framework/Headers/QDragEnterEvent \
 		/opt/homebrew/lib/QtCore.framework/Headers/QStandardPaths \
 		/opt/homebrew/lib/QtCore.framework/Headers/qstandardpaths.h \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/QListWidget \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/qlistwidget.h \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/QListWidgetItem \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/QGraphicsScene \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/qgraphicsscene.h \
 		plot.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o dataset_plot.o dataset_plot.cpp
 

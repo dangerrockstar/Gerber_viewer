@@ -41,49 +41,123 @@ void plot::plot_gerber(const std::string &file_path, cv::Mat &surface)
         return;
     }
 
+    // Read file into memory so we can scan header info first
+    std::vector<std::string> lines;
+    std::string line;
+    while (std::getline(infile, line)) {
+        lines.push_back(line);
+    }
+
+    // Detect format (FSLAX) and units (MOMM / MOIN)
+    int xInt = 2, xDec = 4; // fallback: 2.4
+    int yInt = 2, yDec = 4;
+    bool unitsMM = false;
+    for (const auto &l : lines) {
+        if (l.find("%MOMM") != std::string::npos) unitsMM = true;
+        size_t p = l.find("%FSLAX");
+        if (p != std::string::npos) {
+            // expect pattern like %FSLAX66Y66*%
+            size_t px = l.find('X', p);
+            size_t py = l.find('Y', p);
+            if (px != std::string::npos && py != std::string::npos && py > px+1) {
+                // read two chars after X as digits (int and dec)
+                if (px+2 < l.size() && std::isdigit(static_cast<unsigned char>(l[px+1])) && std::isdigit(static_cast<unsigned char>(l[px+2]))) {
+                    xInt = l[px+1] - '0';
+                    xDec = l[px+2] - '0';
+                }
+                if (py+2 < l.size() && std::isdigit(static_cast<unsigned char>(l[py+1])) && std::isdigit(static_cast<unsigned char>(l[py+2]))) {
+                    yInt = l[py+1] - '0';
+                    yDec = l[py+2] - '0';
+                }
+            }
+        }
+    }
+
     struct GerberCommand {
         double x = 0.0;
         double y = 0.0;
-        int d = 2;
+        int d = 2; // 1=draw,2=move,3=flash
     };
 
     std::vector<GerberCommand> commands;
     double currentX = 0.0;
     double currentY = 0.0;
     int currentD = 2;
-    std::string line;
+    auto parseToken = [&](const std::string &tok, int intDigits, int decDigits) {
+        // tok contains only optional sign and digits
+        if (tok.empty()) return 0.0;
+        bool negative = tok[0] == '-';
+        std::string digits;
+        for (char c : tok) if (std::isdigit(static_cast<unsigned char>(c))) digits.push_back(c);
+        int total = intDigits + decDigits;
+        if ((int)digits.size() < total) {
+            // pad left with zeros (leading zeros omitted)
+            std::string pad(total - digits.size(), '0');
+            digits = pad + digits;
+        }
+        std::string intPart = digits.substr(0, intDigits);
+        std::string decPart = digits.substr(intDigits);
+        long long iPart = 0;
+        long long dPart = 0;
+        if (!intPart.empty()) iPart = std::stoll(intPart);
+        if (!decPart.empty()) dPart = std::stoll(decPart);
+        double value = static_cast<double>(iPart) + static_cast<double>(dPart) / std::pow(10.0, decDigits);
+        return negative ? -value : value;
+    };
 
-    while (std::getline(infile, line)) {
-        if (line.empty())
+    for (const auto &raw : lines) {
+        std::string l = raw;
+        // trim
+        while (!l.empty() && (l.back() == '\r' || l.back() == '\n' || l.back() == ' ' || l.back() == '\t')) l.pop_back();
+        if (l.empty()) continue;
+        if (l.front() == '%') continue;
+        if (l.front() == 'G' || l.front() == 'M') continue;
+
+        // remove trailing '*'
+        if (!l.empty() && l.back() == '*') l.pop_back();
+
+        // pure Dnn aperture selection (no coords)
+        if (l.size() > 1 && l[0] == 'D' && std::isdigit(static_cast<unsigned char>(l[1]))) {
+            // if it's only Dnn, set currentD or treat as aperture select
+            // D01/D02/D03 are stateful commands when used with coords; standalone aperture selects (like D10) we ignore
+            if (l.size() >= 3 && (l[1] == '0' || l[1] == '1' || l[1] == '2' || l[1] == '3')) {
+                // e.g., D01, D02, D03
+                int code = std::stoi(l.substr(1));
+                if (code >= 1 && code <= 3) currentD = code;
+            }
             continue;
+        }
 
-        if (line.front() == '%' || line.front() == 'G' || line.front() == 'M')
-            continue;
+        size_t xPos = l.find('X');
+        size_t yPos = l.find('Y');
+        size_t dPos = l.find('D');
 
-        size_t xPos = line.find('X');
-        size_t yPos = line.find('Y');
-        size_t dPos = line.find('D');
-
-        if (dPos != std::string::npos && dPos + 1 < line.size()) {
-            std::string dCode = line.substr(dPos + 1, 2);
-            if (dCode.size() == 2 && std::isdigit(static_cast<unsigned char>(dCode[0])) && std::isdigit(static_cast<unsigned char>(dCode[1]))) {
-                currentD = std::stoi(dCode);
+        // detect inline D code
+        if (dPos != std::string::npos && dPos + 1 < l.size()) {
+            // read digits after D
+            size_t dstart = dPos + 1;
+            size_t dend = dstart;
+            while (dend < l.size() && std::isdigit(static_cast<unsigned char>(l[dend]))) ++dend;
+            if (dend > dstart) {
+                int code = std::stoi(l.substr(dstart, dend - dstart));
+                currentD = code;
             }
         }
 
-        bool hasCoordinate = false;
-        if (xPos != std::string::npos) {
-            size_t end = (yPos != std::string::npos) ? yPos : (dPos != std::string::npos ? dPos : line.size());
-            currentX = parseGerberCoordinate(line.substr(xPos + 1, end - (xPos + 1)));
-            hasCoordinate = true;
+        bool hasX = xPos != std::string::npos;
+        bool hasY = yPos != std::string::npos;
+        if (hasX) {
+            size_t end = (yPos != std::string::npos) ? yPos : (dPos != std::string::npos ? dPos : l.size());
+            std::string tok = l.substr(xPos + 1, end - (xPos + 1));
+            currentX = parseToken(tok, xInt, xDec);
         }
-        if (yPos != std::string::npos) {
-            size_t end = (dPos != std::string::npos) ? dPos : line.size();
-            currentY = parseGerberCoordinate(line.substr(yPos + 1, end - (yPos + 1)));
-            hasCoordinate = true;
+        if (hasY) {
+            size_t end = (dPos != std::string::npos) ? dPos : l.size();
+            std::string tok = l.substr(yPos + 1, end - (yPos + 1));
+            currentY = parseToken(tok, yInt, yDec);
         }
 
-        if (hasCoordinate) {
+        if (hasX || hasY) {
             commands.push_back({currentX, currentY, currentD});
         }
     }
@@ -131,16 +205,32 @@ void plot::plot_gerber(const std::string &file_path, cv::Mat &surface)
         return cv::Point(px, py);
     };
 
-    cv::Point previousPoint = toPoint(commands[0].x, commands[0].y);
-    for (size_t i = 1; i < commands.size(); ++i) {
-        const auto &command = commands[i];
-        cv::Point currentPoint = toPoint(command.x, command.y);
-        if (command.d == 1) {
-            cv::line(surface, previousPoint, currentPoint, cv::Scalar(255), 1, cv::LINE_AA);
-        } else if (command.d == 3) {
-            cv::circle(surface, currentPoint, 3, cv::Scalar(255), cv::FILLED, cv::LINE_AA);
+    // Interpret D-codes across the sequence: D02=move, D01=draw, D03=flash
+    double lastX = commands.front().x;
+    double lastY = commands.front().y;
+    int lastD = commands.front().d;
+    for (size_t i = 0; i < commands.size(); ++i) {
+        const auto &cmd = commands[i];
+        cv::Point pt = toPoint(cmd.x, cmd.y);
+        if (cmd.d == 1) {
+            // draw from lastX,lastY to current
+            cv::Point lastPt = toPoint(lastX, lastY);
+            cv::line(surface, lastPt, pt, cv::Scalar(255), 1, cv::LINE_AA);
+            lastX = cmd.x;
+            lastY = cmd.y;
+            lastD = cmd.d;
+        } else if (cmd.d == 2) {
+            // move
+            lastX = cmd.x;
+            lastY = cmd.y;
+            lastD = cmd.d;
+        } else if (cmd.d == 3) {
+            // flash - draw a filled circle (approx aperture)
+            cv::circle(surface, pt, 3, cv::Scalar(255), cv::FILLED, cv::LINE_AA);
+            lastX = cmd.x;
+            lastY = cmd.y;
+            lastD = cmd.d;
         }
-        previousPoint = currentPoint;
     }
 }
 

@@ -12,6 +12,7 @@
 #include <QtCore/QVariant>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGridLayout>
+#include <QtWidgets/QListWidget>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QStatusBar>
@@ -26,6 +27,7 @@ class Ui_MainWindow
 public:
     QWidget *centralWidget;
     QGridLayout *gridLayout;
+    QListWidget *layerList;
     QSmartGraphicsView *graphicsView;
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
@@ -42,11 +44,17 @@ public:
         gridLayout->setSpacing(6);
         gridLayout->setContentsMargins(11, 11, 11, 11);
         gridLayout->setObjectName("gridLayout");
+        layerList = new QListWidget(centralWidget);
+        layerList->setObjectName("layerList");
+        layerList->setMinimumSize(QSize(160, 0));
+
+        gridLayout->addWidget(layerList, 0, 0, 1, 1);
+
         graphicsView = new QSmartGraphicsView(centralWidget);
         graphicsView->setObjectName("graphicsView");
         graphicsView->setStyleSheet(QString::fromUtf8(""));
 
-        gridLayout->addWidget(graphicsView, 0, 0, 1, 1);
+        gridLayout->addWidget(graphicsView, 0, 1, 1, 1);
 
         MainWindow->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(MainWindow);
