@@ -16,6 +16,7 @@
 #include <QStandardPaths>
 #include <opencv2/opencv.hpp>
 #include <opencv2/opencv_modules.hpp>
+#include <QListWidget>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -34,16 +35,19 @@ MainWindow::MainWindow(QWidget *parent) :
     // Enable drag and drop on main window
     setAcceptDrops(true);
 
-    cv::Mat surface(600, 600, CV_8UC1, cv::Scalar(0));
-    cv::putText(surface,
-                "Open a Gerber file from the toolbar",
-                cv::Point(16, 32),
-                cv::FONT_HERSHEY_SIMPLEX,
-                0.6,
-                cv::Scalar(255),
-                1,
-                cv::LINE_AA);
-    showSurface(surface);
+    // initialize empty scene and placeholder text
+    scene = new QGraphicsScene(ui->graphicsView);
+    QImage placeholder(600, 600, QImage::Format_ARGB32);
+    placeholder.fill(Qt::white);
+    QPainter p(&placeholder);
+    p.setPen(Qt::black);
+    p.drawText(16,32, tr("Open a Gerber file from the toolbar or drop files here"));
+    p.end();
+    scene->addPixmap(QPixmap::fromImage(placeholder));
+    ui->graphicsView->setScene(scene);
+
+    // connect layer list
+    connect(ui->layerList, &QListWidget::itemChanged, this, &MainWindow::on_layerItemChanged);
 }
 
 MainWindow::~MainWindow()
@@ -60,29 +64,22 @@ void MainWindow::showSurface(const cv::Mat &surface)
 
     QGraphicsScene *newScene = new QGraphicsScene(ui->graphicsView);
     newScene->addPixmap(QPixmap::fromImage(image));
-    ui->graphicsView->setScene(newScene);
-    ui->graphicsView->fitInView(newScene->sceneRect(), Qt::KeepAspectRatio);
+    scene = newScene;
+    ui->graphicsView->setScene(scene);
+    ui->graphicsView->fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
 }
 
 void MainWindow::on_actionOpenGerber_triggered()
 {
     QString defaultDir = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
     if (defaultDir.isEmpty()) defaultDir = QDir::homePath();
-    QString fileName = QFileDialog::getOpenFileName(this,
-                                                    tr("Open Gerber File"),
-                                                    defaultDir,
-                                                    tr("Gerber Files (*.gbr *.gtl *.gts);;All Files (*.*)"));
-    if (fileName.isEmpty()) {
-        return;
-    }
+    QStringList files = QFileDialog::getOpenFileNames(this,
+                                                     tr("Open Gerber Files"),
+                                                     defaultDir,
+                                                     tr("Gerber Files (*.gbr *.gtl *.gts *.ger);;All Files (*.*)"));
+    if (files.isEmpty()) return;
 
-    cv::Mat surface(1200, 1200, CV_8UC1, cv::Scalar(0));
-    plot p;
-    p.plot_gerber(fileName.toStdString(), surface);
-    showSurface(surface);
-
-    ui->statusBar->showMessage(tr("Loaded %1").arg(QFileInfo(fileName).fileName()));
-    setWindowTitle(tr("Gerber Viewer - %1").arg(QFileInfo(fileName).fileName()));
+    for (const QString &f : files) addLayerFromFile(f);
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
@@ -201,4 +198,60 @@ QImage MainWindow::mat2qimage(const cv::Mat &mat)
         return img.rgbSwapped().copy();
     }
     return QImage();
+}
+
+void MainWindow::addLayerFromFile(const QString &filePath)
+{
+    plot p;
+    cv::Mat surface(1200, 1200, CV_8UC1, cv::Scalar(0));
+    p.plot_gerber(filePath.toStdString(), surface);
+
+    // convert to ARGB image where non-zero pixels are black and opaque
+    QImage img = matToArgb(surface);
+
+    QPixmap pix = QPixmap::fromImage(img);
+    if (!scene) { scene = new QGraphicsScene(ui->graphicsView); ui->graphicsView->setScene(scene); }
+    QGraphicsPixmapItem *item = scene->addPixmap(pix);
+    item->setZValue(layers.size());
+
+    Layer L;
+    L.name = QFileInfo(filePath).fileName();
+    L.mat = surface;
+    L.pixmap = item;
+    layers.append(L);
+
+    // add to list widget
+    QListWidgetItem *li = new QListWidgetItem(L.name, ui->layerList);
+    li->setFlags(li->flags() | Qt::ItemIsUserCheckable);
+    li->setCheckState(Qt::Checked);
+    ui->layerList->addItem(li);
+
+    ui->statusBar->showMessage(tr("Loaded %1").arg(L.name));
+    setWindowTitle(tr("Gerber Viewer - %1").arg(L.name));
+}
+
+QImage MainWindow::matToArgb(const cv::Mat &mat)
+{
+    QImage img(mat.cols, mat.rows, QImage::Format_ARGB32);
+    img.fill(Qt::transparent);
+    for (int y = 0; y < mat.rows; ++y) {
+        const uchar* row = mat.ptr<uchar>(y);
+        QRgb *scan = reinterpret_cast<QRgb*>(img.scanLine(y));
+        for (int x = 0; x < mat.cols; ++x) {
+            uchar v = row[x];
+            if (v) scan[x] = qRgba(0,0,0,255);
+            else scan[x] = qRgba(0,0,0,0);
+        }
+    }
+    return img;
+}
+
+void MainWindow::on_layerItemChanged(QListWidgetItem *item)
+{
+    if (!item) return;
+    QString name = item->text();
+    bool visible = (item->checkState() == Qt::Checked);
+    for (Layer &L : layers) {
+        if (L.name == name && L.pixmap) L.pixmap->setVisible(visible);
+    }
 }

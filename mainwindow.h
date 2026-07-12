@@ -5,6 +5,9 @@
 #include <QDropEvent>
 #include <QDragEnterEvent>
 #include <QStandardPaths>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include <QGraphicsScene>
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -36,11 +39,23 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    QGraphicsScene *scene = nullptr;
     void showSurface(const cv::Mat &surface);
     QImage mat2qimage(const cv::Mat &mat);
 protected:
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
+private slots:
+    void on_layerItemChanged(QListWidgetItem *item);
+private:
+    struct Layer {
+        QString name;
+        cv::Mat mat;
+        QGraphicsPixmapItem *pixmap = nullptr;
+    };
+    QVector<Layer> layers;
+    void addLayerFromFile(const QString &filePath);
+    QImage matToArgb(const cv::Mat &mat);
 };
 
 #endif // MAINWINDOW_H
